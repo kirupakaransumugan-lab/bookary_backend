@@ -1,4 +1,6 @@
-from sqlalchemy import String, Float, Boolean
+from datetime import date
+
+from sqlalchemy import String, Float, Boolean, Date , ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -35,4 +37,123 @@ class Book(Base):
     available: Mapped[bool] = mapped_column(
         Boolean,
         default=True
+    )
+
+class Author(Base):
+    __tablename__ = "authors"
+
+    id: Mapped[str] = mapped_column(
+        String(20),
+        primary_key=True
+    )
+
+    name: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False
+    )
+
+    email: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False
+    )
+
+    country: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False
+    )
+
+
+class Category(Base):
+    __tablename__ = "categories"
+
+    id: Mapped[str] = mapped_column(
+        String(20),
+        primary_key=True
+    )
+
+    name: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False
+    )
+
+    description: Mapped[str] = mapped_column(
+        String(500),
+        nullable=False
+    )
+
+
+class Member(Base):
+    __tablename__ = "members"
+
+    id: Mapped[str] = mapped_column(
+        String(20),
+        primary_key=True
+    )
+
+    name: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False
+    )
+
+    email: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False
+    )
+
+    phone: Mapped[str] = mapped_column(
+        String(30),
+        nullable=False
+    )
+
+    status: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        default="Active"
+    )
+
+    joined: Mapped[date] = mapped_column(
+        Date,
+        nullable=False
+    )
+
+
+
+class Borrow(Base):
+    __tablename__ = "borrows"
+
+    id: Mapped[str] = mapped_column(
+        String(20),
+        primary_key=True
+    )
+
+    member_id: Mapped[str] = mapped_column(
+        String(20),
+        ForeignKey("members.id"),
+        nullable=False
+    )
+
+    book_id: Mapped[int] = mapped_column(
+        ForeignKey("books.id"),
+        nullable=False
+    )
+
+    borrowed: Mapped[date] = mapped_column(
+        Date,
+        nullable=False
+    )
+
+    due: Mapped[date] = mapped_column(
+        Date,
+        nullable=False
+    )
+
+    returned: Mapped[date | None] = mapped_column(
+        Date,
+        nullable=True
+    )
+
+    status: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        default="Borrowed"
     )
