@@ -2,6 +2,7 @@ from fastapi import FastAPI
 
 from app.database import engine, Base
 from app.models import Book, Author, Category , Member , Borrow
+from app.routers.auth import router as auth_router
 from app.routers.book import router as book_router
 
 from app.routers.author import router as author_router
@@ -30,3 +31,4 @@ app.include_router(author_router)
 app.include_router(category_router)
 app.include_router(member_router)
 app.include_router(borrow_router)
+app.include_router(auth_router)
