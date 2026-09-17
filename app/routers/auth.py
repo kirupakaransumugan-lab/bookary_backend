@@ -1,16 +1,22 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from fastapi import Header
+from fastapi.security import HTTPBearer
+
+
 from app.database import get_db
 from app.models import User
 from app.schemas.auth import UserCreate, UserResponse, UserLogin
 from app.auth.security import hash_password, verify_password, create_access_token,  decode_access_token
 
+security = HTTPBearer()
 
 router = APIRouter(
     prefix="/auth",
     tags=["Authentication"]
 )
+
+
 
 
 @router.post("/register", response_model=UserResponse)
@@ -95,16 +101,10 @@ def login_user(
 
 @router.get("/me", response_model=UserResponse)
 def get_my_profile(
-    authorization: str = Header(...),
+    credentials = Depends(security),
     db: Session = Depends(get_db)
 ):
-    if not authorization.startswith("Bearer "):
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid authorization header"
-        )
-
-    token = authorization.split(" ")[1]
+    token = credentials.credentials
 
     payload = decode_access_token(token)
 
