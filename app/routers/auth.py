@@ -1,16 +1,18 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from fastapi import Header
-from fastapi.security import HTTPBearer
 
 
 from app.database import get_db
 from app.models import User
-from app.schemas.auth import UserCreate, UserResponse, UserLogin
-from app.auth.security import hash_password, verify_password, create_access_token,  decode_access_token
-
-security = HTTPBearer()
+from app.schemas.auth import LibrarianCreate, UserCreate, UserResponse
+from app.auth.security import (
+    create_access_token,
+    get_current_user,
+    hash_password,
+    require_admin,
+    verify_password,
+)
 
 router = APIRouter(
     prefix="/auth",
@@ -48,7 +50,50 @@ def register_user(
         name=user.name,
         email=user.email,
         password_hash=hash_password(user.password),
-        role=user.role
+        role="member"
+    )
+
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    return new_user
+
+
+@router.post(
+    "/create-librarian",
+    response_model=UserResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_librarian(
+    user: LibrarianCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
+):
+    existing_user = db.query(User).filter(
+        User.email == user.email
+    ).first()
+
+    if existing_user:
+        raise HTTPException(
+            status_code=400,
+            detail="Email already registered"
+        )
+
+    last_user = db.query(User).order_by(User.id.desc()).first()
+
+    if last_user:
+        last_number = int(last_user.id.split("-")[1])
+        new_id = f"usr-{last_number + 1}"
+    else:
+        new_id = "usr-1"
+
+    new_user = User(
+        id=new_id,
+        name=user.name,
+        email=user.email,
+        password_hash=hash_password(user.password),
+        role="librarian",
     )
 
     db.add(new_user)
@@ -102,29 +147,6 @@ def login_user(
 
 @router.get("/me", response_model=UserResponse)
 def get_my_profile(
-    credentials = Depends(security),
-    db: Session = Depends(get_db)
+    current_user: User = Depends(get_current_user)
 ):
-    token = credentials.credentials
-
-    payload = decode_access_token(token)
-
-    user_id = payload.get("sub")
-
-    if not user_id:
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid token"
-        )
-
-    user = db.query(User).filter(
-        User.id == user_id
-    ).first()
-
-    if not user:
-        raise HTTPException(
-            status_code=404,
-            detail="User not found"
-        )
-
-    return user
+    return current_user

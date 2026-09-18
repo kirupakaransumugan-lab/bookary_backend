@@ -1,13 +1,22 @@
 from datetime import datetime
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr
 
 
 class UserCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     name: str
     email: EmailStr
     password: str
-    role: str = "member"
+
+
+class LibrarianCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: str
+    email: EmailStr
+    password: str
 
 
 class UserLogin(BaseModel):

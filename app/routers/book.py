@@ -46,7 +46,8 @@ def get_books(
 )
 def get_book(
     book_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
 
     book = db.query(Book).filter(Book.id == book_id).first()

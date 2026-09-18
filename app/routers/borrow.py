@@ -24,7 +24,8 @@ router = APIRouter(
     response_model=list[BorrowResponse]
 )
 def get_borrows(
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_librarian)
 ):
     return db.query(Borrow).all()
 
@@ -35,7 +36,8 @@ def get_borrows(
 )
 def get_borrow(
     borrow_id: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_librarian)
 ):
 
     borrow = db.query(Borrow).filter(
