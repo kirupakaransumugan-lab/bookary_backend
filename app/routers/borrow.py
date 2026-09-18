@@ -4,7 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Borrow, Book, Member
+from app.models import Borrow, Book, Member, User
+from app.auth.security import require_librarian
 from app.schemas.borrows import (
     BorrowCreate,
     BorrowUpdate,
@@ -52,12 +53,12 @@ def get_borrow(
 
 @router.post(
     "/",
-    response_model=BorrowResponse,
-    status_code=status.HTTP_201_CREATED
+    response_model=BorrowResponse
 )
 def create_borrow(
     borrow: BorrowCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_librarian)
 ):
 
     member = db.query(Member).filter(
@@ -120,10 +121,11 @@ def create_borrow(
     "/{borrow_id}",
     response_model=BorrowResponse
 )
-def update_borrow(
+def return_book(
     borrow_id: str,
     borrow: BorrowUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_librarian)
 ):
 
     selected_borrow = db.query(Borrow).filter(
@@ -154,7 +156,8 @@ def update_borrow(
 )
 def delete_borrow(
     borrow_id: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_librarian)
 ):
 
     borrow = db.query(Borrow).filter(

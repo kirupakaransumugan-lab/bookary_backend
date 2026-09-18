@@ -2,7 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Category
+from app.models import Category, User
+from app.auth.security import get_current_user, require_librarian
 from app.schemas.categories import (
     CategoryCreate,
     CategoryUpdate,
@@ -21,7 +22,8 @@ router = APIRouter(
     response_model=list[CategoryResponse]
 )
 def get_categories(
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
 
     return db.query(Category).all()
@@ -33,7 +35,8 @@ def get_categories(
 )
 def get_category(
     category_id: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
 
     category = db.query(Category).filter(
@@ -56,7 +59,8 @@ def get_category(
 )
 def create_category(
     category: CategoryCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_librarian)
 ):
 
     last_category = (
@@ -91,7 +95,8 @@ def create_category(
 def update_category(
     category_id: str,
     category: CategoryUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_librarian)
 ):
 
     selected_category = db.query(Category).filter(
@@ -122,7 +127,8 @@ def update_category(
 )
 def delete_category(
     category_id: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_librarian)
 ):
 
     category = db.query(Category).filter(

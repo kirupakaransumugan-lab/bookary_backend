@@ -2,8 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Author
+from app.models import Author, User
 from app.schemas.author import AuthorCreate, AuthorUpdate, AuthorResponse
+from app.auth.security import get_current_user, require_librarian
 
 
 router = APIRouter(
@@ -18,7 +19,8 @@ router = APIRouter(
     response_model=list[AuthorResponse]
 )
 def get_authors(
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     return db.query(Author).all()
 
@@ -30,9 +32,10 @@ def get_authors(
 )
 def get_author(
     author_id: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
-
+    
     author = db.query(Author).filter(
         Author.id == author_id
     ).first()
@@ -49,14 +52,13 @@ def get_author(
 # Create author
 @router.post(
     "/",
-    response_model=AuthorResponse,
-    status_code=status.HTTP_201_CREATED
+    response_model=AuthorResponse
 )
 def create_author(
     author: AuthorCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_librarian)
 ):
-
     last_author = (
         db.query(Author)
         .order_by(Author.id.desc())
@@ -83,6 +85,7 @@ def create_author(
     return new_author
 
 
+
 # Update author
 @router.put(
     "/{author_id}",
@@ -91,9 +94,10 @@ def create_author(
 def update_author(
     author_id: str,
     author: AuthorUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_librarian)
 ):
-
+    # your existing update code
     selected_author = db.query(Author).filter(
         Author.id == author_id
     ).first()
@@ -118,12 +122,11 @@ def update_author(
 
 
 # Delete author
-@router.delete(
-    "/{author_id}"
-)
+@router.delete("/{author_id}")
 def delete_author(
     author_id: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_librarian)
 ):
 
     author = db.query(Author).filter(

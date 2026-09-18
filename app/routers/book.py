@@ -2,8 +2,10 @@ from fastapi import APIRouter, HTTPException, status, Depends
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Book
+from app.models import Book, User
 from app.schemas.books import BookCreate, BookUpdate, BookResponse
+from app.auth.security import get_current_user, require_librarian
+
 
 
 router = APIRouter(
@@ -20,9 +22,10 @@ router = APIRouter(
 def get_books(
     category: str | None = None,
     max_price: float | None = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
-
+    
     query = db.query(Book)
 
     # Filter by category
@@ -65,7 +68,8 @@ def get_book(
 )
 def create_book(
     book: BookCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_librarian)
 ):
 
     new_book = Book(
@@ -90,8 +94,9 @@ def create_book(
 )
 def update_book(
     book_id: int,
-    book: BookUpdate,
-    db: Session = Depends(get_db)
+    book: BookCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_librarian)
 ):
 
     selected_book = db.query(Book).filter(Book.id == book_id).first()
@@ -114,14 +119,12 @@ def update_book(
 
 
 # Delete a book
-@router.delete(
-    "/{book_id}"
-)
+@router.delete("/{book_id}")
 def delete_book(
     book_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_librarian)
 ):
-
     book = db.query(Book).filter(Book.id == book_id).first()
 
     if book is None:

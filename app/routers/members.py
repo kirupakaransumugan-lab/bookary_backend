@@ -2,7 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Member
+from app.models import Member, User
+from app.auth.security import get_current_user, require_librarian
 from app.schemas.members import (
     MemberCreate,
     MemberUpdate,
@@ -16,13 +17,12 @@ router = APIRouter(
 )
 
 
-@router.get(
-    "/",
-    response_model=list[MemberResponse]
-)
+@router.get("/")
 def get_members(
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_librarian)
 ):
+    
     return db.query(Member).all()
 
 
@@ -32,7 +32,8 @@ def get_members(
 )
 def get_member(
     member_id: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_librarian)
 ):
 
     member = db.query(Member).filter(
@@ -55,7 +56,8 @@ def get_member(
 )
 def create_member(
     member: MemberCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_librarian)
 ):
 
     last_member = (
@@ -93,7 +95,8 @@ def create_member(
 def update_member(
     member_id: str,
     member: MemberUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_librarian)
 ):
 
     selected_member = db.query(Member).filter(
@@ -124,7 +127,8 @@ def update_member(
 )
 def delete_member(
     member_id: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_librarian)
 ):
 
     member = db.query(Member).filter(
